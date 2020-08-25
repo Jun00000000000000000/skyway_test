@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="ja">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script src="https://cdn.webrtc.ecl.ntt.com/skyway-latest.js"></script>
+    <title>SkyWayチュートリアル</title>
+</head>
+
+<body>
+    <!-- <p><video id="my-video" width="400px" playsinline></video></p> -->
+    <p><audio id="my-audio"></audio></p>
+    <p id="my-id"></p>
+    <textarea id="their-id"></textarea>
+    <button id="make-call">発信</button>
+    <!-- <video id="their-video" width="400px" playsinline></video> -->
+    <audio id="their-audio"></audio>
+    <script>
+        const peer = new Peer({
+            key: '5e515941-74d3-43fa-9f00-239bf7559a52',
+            debug: 3
+        });
+
+        peer.on('open', () => {
+            document.getElementById('my-id').textContent = peer.id;
+        });
+
+        let localStream2;
+
+        // カメラ映像取得
+        navigator.mediaDevices.getUserMedia({
+            video: true, audio: true
+        })
+            .then(stream => {
+                // 成功時にvideo要素にカメラ映像をセットし、再生
+                const audioElm = document.getElementById('my-audio')
+                audioElm.srcObject = stream;
+                // audioElm.play();
+                // 着信時に相手にカメラ映像を返せるように、グローバル変数に保存しておく
+                localStream2 = stream;
+            }).catch(error => {
+                // 失敗時にはエラーログを出力
+                console.error('mediaDevice.getUserMedia() error:', error);
+                return;
+            });
+
+        document.getElementById('make-call').onclick = () => {
+            const theirID = document.getElementById('their-id').value;
+            const mediaConnection2 = peer.call(theirID, localStream2);
+            setEventListener(mediaConnection2);
+        };
+
+        // イベントリスナを設置する関数
+        const setEventListener = mediaConnection2 => {
+            mediaConnection2.on('stream', stream => {
+                // video要素にカメラ映像をセットして再生
+                const audioElm = document.getElementById('their-audio')
+                audioElm.srcObject = stream;
+                audioElm.play();
+            });
+        }
+
+        peer.on('call', mediaConnection2 => {
+  mediaConnection2.answer(localStream2);
+  setEventListener(mediaConnection2);
+});
+
+    </script>
+</body>
+
+</html>
